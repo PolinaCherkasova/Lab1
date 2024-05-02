@@ -1,19 +1,5 @@
 #include "manager.h"
 
-Manager::Manager()
-{
-    // Создание экземпляра ConsoleLogger
-    logger = new ConsoleLogger();
-    // Подключение сигналов к слотам
-    connect(this, &Manager::FileExistenceHasChanged, logger, &ConsoleLogger::PrintFileExistenceChange);
-    connect(this, &Manager::FileSizeHasChanged, logger, &ConsoleLogger::PrintFileSizeChange);
-}
-
-Manager::~Manager()
-{
-    delete logger; // Освобождаем память после использования
-}
-
 void Manager::Monitoring() //метод, реализующий слежение за характеристиками файлов: размер и факт существования
 {
     for (int i = 0; i < files.size(); i++)
@@ -22,13 +8,19 @@ void Manager::Monitoring() //метод, реализующий слежение
         if (file.isChangedStatus()) //если в файле был изменен статус, то
         {
             file.Update(); //обновляем информацию о файле
-            emit FileExistenceHasChanged(file.path, file.status, file.size); //генерация сигнала
+            if (file.status && (file.size != 0)) //если файл существует и он не пустой, то
+            {
+            emit FileCreated(file.path, file.size); //генерация сигнала
+            }
+            else { //иначе если файл не существует, то
+            emit FileDeleted(file.path); //генерация сигнала
+            }
         }
 
         else if (file.isChangedSize()) //если в файле был изменен размер, то
         {
             file.Update(); //обновляем информацию о файле
-            emit FileSizeHasChanged(file.path, file.status, file.size); //генерация сигнала
+            emit FileSizeHasChanged(file.path, file.size); //генерация сигнала
         }
     }
 }
